@@ -9,6 +9,8 @@ import com.eventticket.ticketing.entity.Ticket;
 import com.eventticket.ticketing.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class TicketingService {
+     private static final Logger logger = LoggerFactory.getLogger(TicketingService.class);
      private final TicketRepository ticketRepository;
 
      /**
@@ -31,14 +34,14 @@ public class TicketingService {
       */
      @KafkaListener(topics = "payment-confirmed", groupId = "ticketing-service")
      public void onPaymentConfirmed(String message) {
-          log.info("Received PaymentConfirmed event: {}", message);
+          logger.info("Received PaymentConfirmed event: {}", message);
           // Parse message and create tickets
           // Format: {"paymentId": "xxx", "userId": "xxx", "eventId": "xxx", "amount":
           // 100.0}
      }
 
      public TicketDto createTicket(String eventId, String seatId, String userId, String paymentId) {
-          log.info("Creating ticket: eventId={}, seatId={}, userId={}, paymentId={}",
+          logger.info("Creating ticket: eventId={}, seatId={}, userId={}, paymentId={}",
                     eventId, seatId, userId, paymentId);
 
           // Generate unique QR code
@@ -58,7 +61,7 @@ public class TicketingService {
                     .build();
 
           Ticket savedTicket = ticketRepository.save(ticket);
-          log.info("Ticket created successfully: ticketId={}, qrCode={}", savedTicket.getId(), ticketQrCode);
+          logger.info("Ticket created successfully: ticketId={}, qrCode={}", savedTicket.getId(), ticketQrCode);
 
           return mapToDto(savedTicket);
      }
@@ -87,7 +90,7 @@ public class TicketingService {
       * Check-in: người dùng quét QR code khi vào sự kiện
       */
      public TicketDto checkIn(String ticketId) {
-          log.info("Check-in ticket: ticketId={}", ticketId);
+          logger.info("Check-in ticket: ticketId={}", ticketId);
 
           Ticket ticket = ticketRepository.findById(ticketId)
                     .orElseThrow(() -> new RuntimeException("Ticket not found: " + ticketId));
@@ -131,7 +134,7 @@ public class TicketingService {
                MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
                return outputStream.toByteArray();
           } catch (Exception e) {
-               log.error("Error generating QR code image", e);
+               logger.error("Error generating QR code image", e);
                throw new RuntimeException("Failed to generate QR code image", e);
           }
      }
