@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @Transactional
@@ -34,7 +33,6 @@ public class SeatAllocationService {
           log.info("Attempting to hold seat: eventId={}, seatId={}, userId={}", eventId, seatId, userId);
 
           String lockKey = SEAT_LOCK_PREFIX + eventId + ":" + seatId;
-          long holdDurationMs = Duration.ofMinutes(HOLD_DURATION_MINUTES).toMillis();
 
           // Try to acquire lock with Redis NX (only set if not exists)
           Boolean lockAcquired = redisTemplate.opsForValue()

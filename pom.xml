@@ -29,7 +29,7 @@
         <spring-cloud.version>2024.0.0</spring-cloud.version>
         <grpc.version>1.59.0</grpc.version>
         <protobuf.version>3.24.0</protobuf.version>
-        <lombok.version>1.18.32</lombok.version>
+        <lombok.version>1.18.30</lombok.version>
     </properties>
 
     <dependencyManagement>

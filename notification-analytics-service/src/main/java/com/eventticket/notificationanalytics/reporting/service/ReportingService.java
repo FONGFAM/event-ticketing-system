@@ -4,13 +4,11 @@ import com.eventticket.notificationanalytics.reporting.dto.EventReportDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class ReportingService {
-     private final WebClient webClient;
 
      public EventReportDto getEventReport(String eventId) {
           log.info("Generating report for event: {}", eventId);
