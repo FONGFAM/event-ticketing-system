@@ -3,15 +3,17 @@ package com.eventticket.notificationanalytics.reporting.controller;
 import com.eventticket.common.dto.ApiResponse;
 import com.eventticket.notificationanalytics.reporting.dto.EventReportDto;
 import com.eventticket.notificationanalytics.reporting.service.ReportingService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/reports")
-@RequiredArgsConstructor
 public class ReportingController {
      private final ReportingService reportingService;
+
+     public ReportingController(ReportingService reportingService) {
+          this.reportingService = reportingService;
+     }
 
      @GetMapping("/events/{eventId}")
      public ResponseEntity<ApiResponse<EventReportDto>> getEventReport(@PathVariable String eventId) {

@@ -1,17 +1,20 @@
 package com.eventticket.notificationanalytics.reporting.service;
 
 import com.eventticket.notificationanalytics.reporting.dto.EventReportDto;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class ReportingService {
+     private static final Logger logger = LoggerFactory.getLogger(ReportingService.class);
+
+     public ReportingService() {
+     }
 
      public EventReportDto getEventReport(String eventId) {
-          log.info("Generating report for event: {}", eventId);
+          logger.info("Generating report for event: {}", eventId);
 
           // Call Event Service to get event details`
           // Call Ticketing Service to get sold tickets
@@ -30,7 +33,7 @@ public class ReportingService {
      }
 
      public EventReportDto[] getAllEventReports() {
-          log.info("Generating reports for all events");
+          logger.info("Generating reports for all events");
 
           // Query all services and aggregate data
           return new EventReportDto[] {

@@ -3,16 +3,18 @@ package com.eventticket.eventbooking.seat.controller;
 import com.eventticket.common.dto.ApiResponse;
 import com.eventticket.common.dto.SeatDto;
 import com.eventticket.eventbooking.seat.service.SeatAllocationService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/seats")
-@RequiredArgsConstructor
 public class SeatAllocationController {
       private final SeatAllocationService seatAllocationService;
+
+      public SeatAllocationController(SeatAllocationService seatAllocationService) {
+            this.seatAllocationService = seatAllocationService;
+      }
 
       @PostMapping("/hold")
       public ResponseEntity<ApiResponse<SeatDto>> holdSeat(

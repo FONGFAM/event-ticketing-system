@@ -4,8 +4,9 @@ import com.eventticket.common.dto.SeatDto;
 import com.eventticket.common.exception.SeatAlreadyHeldException;
 import com.eventticket.eventbooking.seat.entity.SeatReservation;
 import com.eventticket.eventbooking.seat.repository.SeatReservationRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +16,15 @@ import java.time.LocalDateTime;
 
 @Service
 @Transactional
-@Slf4j
-@RequiredArgsConstructor
 public class SeatAllocationService {
+     private static final Logger logger = LoggerFactory.getLogger(SeatAllocationService.class);
      private final SeatReservationRepository reservationRepository;
      private final RedisTemplate<String, String> redisTemplate;
+
+     public SeatAllocationService(SeatReservationRepository reservationRepository, RedisTemplate<String, String> redisTemplate) {
+          this.reservationRepository = reservationRepository;
+          this.redisTemplate = redisTemplate;
+     }
 
      private static final long HOLD_DURATION_MINUTES = 5;
      private static final String SEAT_LOCK_PREFIX = "seat_lock:";
@@ -30,7 +35,7 @@ public class SeatAllocationService {
       * Nếu key đã tồn tại, operation sẽ fail
       */
      public SeatDto holdSeat(String eventId, String seatId, String userId) {
-          log.info("Attempting to hold seat: eventId={}, seatId={}, userId={}", eventId, seatId, userId);
+          logger.info("Attempting to hold seat: eventId={}, seatId={}, userId={}", eventId, seatId, userId);
 
           String lockKey = SEAT_LOCK_PREFIX + eventId + ":" + seatId;
 
@@ -40,7 +45,7 @@ public class SeatAllocationService {
 
           if (Boolean.FALSE.equals(lockAcquired)) {
                String currentHolder = redisTemplate.opsForValue().get(lockKey);
-               log.warn("Seat already held by: {}", currentHolder);
+               logger.warn("Seat already held by: {}", currentHolder);
                throw new SeatAlreadyHeldException(seatId);
           }
 
@@ -55,7 +60,7 @@ public class SeatAllocationService {
                     .build();
 
           SeatReservation saved = reservationRepository.save(reservation);
-          log.info("Seat held successfully: reservationId={}", saved.getId());
+          logger.info("Seat held successfully: reservationId={}", saved.getId());
 
           return SeatDto.builder()
                     .id(seatId)
@@ -70,7 +75,7 @@ public class SeatAllocationService {
       * Release seat (người dùng hủy hoặc hết thời gian)
       */
      public void releaseSeat(String eventId, String seatId, String userId) {
-          log.info("Releasing seat: eventId={}, seatId={}, userId={}", eventId, seatId, userId);
+          logger.info("Releasing seat: eventId={}, seatId={}, userId={}", eventId, seatId, userId);
 
           String lockKey = SEAT_LOCK_PREFIX + eventId + ":" + seatId;
 
@@ -84,14 +89,14 @@ public class SeatAllocationService {
                          reservationRepository.save(reservation);
                     });
 
-          log.info("Seat released: eventId={}, seatId={}", eventId, seatId);
+          logger.info("Seat released: eventId={}, seatId={}", eventId, seatId);
      }
 
      /**
       * Confirm seat ownership (sau khi thanh toán thành công)
       */
      public void confirmSeat(String eventId, String seatId, String userId) {
-          log.info("Confirming seat: eventId={}, seatId={}, userId={}", eventId, seatId, userId);
+          logger.info("Confirming seat: eventId={}, seatId={}, userId={}", eventId, seatId, userId);
 
           SeatReservation reservation = reservationRepository
                     .findByEventIdAndSeatIdAndStatus(eventId, seatId, "HELD")
@@ -105,7 +110,7 @@ public class SeatAllocationService {
           reservation.setConfirmedAt(LocalDateTime.now());
           reservationRepository.save(reservation);
 
-          log.info("Seat confirmed: eventId={}, seatId={}", eventId, seatId);
+          logger.info("Seat confirmed: eventId={}, seatId={}", eventId, seatId);
      }
 
      /**
@@ -139,7 +144,7 @@ public class SeatAllocationService {
       * Clean up expired reservations (background job)
       */
      public void cleanupExpiredReservations() {
-          log.info("Cleaning up expired reservations...");
+          logger.info("Cleaning up expired reservations...");
           LocalDateTime now = LocalDateTime.now();
           var expiredReservations = reservationRepository.findByStatusAndExpiresAtBefore("HELD", now);
 
@@ -147,6 +152,6 @@ public class SeatAllocationService {
                releaseSeat(reservation.getEventId(), reservation.getSeatId(), reservation.getUserId());
           }
 
-          log.info("Cleanup completed. Expired reservations: {}", expiredReservations.size());
+          logger.info("Cleanup completed. Expired reservations: {}", expiredReservations.size());
      }
 }
