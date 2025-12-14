@@ -3,7 +3,6 @@ package com.eventticket.ticketing.controller;
 import com.eventticket.common.dto.ApiResponse;
 import com.eventticket.common.dto.TicketDto;
 import com.eventticket.ticketing.service.TicketingService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +11,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tickets")
-@RequiredArgsConstructor
 public class TicketingController {
      private final TicketingService ticketingService;
+
+     public TicketingController(TicketingService ticketingService) {
+          this.ticketingService = ticketingService;
+     }
 
      @PostMapping
      public ResponseEntity<ApiResponse<TicketDto>> createTicket(

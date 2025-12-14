@@ -7,8 +7,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.eventticket.common.dto.TicketDto;
 import com.eventticket.ticketing.entity.Ticket;
 import com.eventticket.ticketing.repository.TicketRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -21,11 +20,13 @@ import java.util.UUID;
 
 @Service
 @Transactional
-@Slf4j
-@RequiredArgsConstructor
 public class TicketingService {
      private static final Logger logger = LoggerFactory.getLogger(TicketingService.class);
      private final TicketRepository ticketRepository;
+
+     public TicketingService(TicketRepository ticketRepository) {
+          this.ticketRepository = ticketRepository;
+     }
 
      /**
       * Listen to payment-confirmed events from Kafka
@@ -103,7 +104,7 @@ public class TicketingService {
           ticket.setCheckedInAt(java.time.LocalDateTime.now());
           Ticket updated = ticketRepository.save(ticket);
 
-          log.info("Ticket check-in successful: ticketId={}", ticketId);
+          logger.info("Ticket check-in successful: ticketId={}", ticketId);
           return mapToDto(updated);
      }
 

@@ -4,7 +4,6 @@ import com.eventticket.common.dto.EventDto;
 import com.eventticket.common.exception.ResourceNotFoundException;
 import com.eventticket.eventbooking.entity.Event;
 import com.eventticket.eventbooking.repository.EventRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,9 +12,12 @@ import java.util.List;
 
 @Service
 @Transactional
-@RequiredArgsConstructor
 public class EventService {
      private final EventRepository eventRepository;
+
+     public EventService(EventRepository eventRepository) {
+          this.eventRepository = eventRepository;
+     }
 
      public EventDto createEvent(EventDto eventDto) {
           Event event = Event.builder()

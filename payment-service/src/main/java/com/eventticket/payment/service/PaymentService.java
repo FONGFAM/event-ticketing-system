@@ -2,25 +2,29 @@ package com.eventticket.payment.service;
 
 import com.eventticket.payment.entity.PaymentTransaction;
 import com.eventticket.payment.repository.PaymentTransactionRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
-@Slf4j
-@RequiredArgsConstructor
 public class PaymentService {
+      private static final Logger logger = LoggerFactory.getLogger(PaymentService.class);
       private final PaymentTransactionRepository transactionRepository;
       private final KafkaTemplate<String, String> kafkaTemplate;
 
       private static final String PAYMENT_CONFIRMED_TOPIC = "payment-confirmed";
       private static final String PAYMENT_FAILED_TOPIC = "payment-failed";
 
+      public PaymentService(PaymentTransactionRepository transactionRepository, KafkaTemplate<String, String> kafkaTemplate) {
+            this.transactionRepository = transactionRepository;
+            this.kafkaTemplate = kafkaTemplate;
+      }
+
       public String createPayment(String userId, String eventId, double amount, String paymentMethod) {
-            log.info("Creating payment: userId={}, eventId={}, amount={}", userId, eventId, amount);
+            logger.info("Creating payment: userId={}, eventId={}, amount={}", userId, eventId, amount);
 
             PaymentTransaction transaction = PaymentTransaction.builder()
                         .userId(userId)
@@ -31,13 +35,13 @@ public class PaymentService {
                         .build();
 
             PaymentTransaction saved = transactionRepository.save(transaction);
-            log.info("Payment created with status PENDING: paymentId={}", saved.getId());
+            logger.info("Payment created with status PENDING: paymentId={}", saved.getId());
 
             return saved.getId();
       }
 
       public void confirmPayment(String paymentId, String transactionIdFromGateway) {
-            log.info("Confirming payment: paymentId={}, gatewayTransactionId={}", paymentId, transactionIdFromGateway);
+            logger.info("Confirming payment: paymentId={}, gatewayTransactionId={}", paymentId, transactionIdFromGateway);
 
             PaymentTransaction transaction = transactionRepository.findById(paymentId)
                         .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
@@ -52,11 +56,11 @@ public class PaymentService {
 
                   // Publish event
                   publishPaymentConfirmedEvent(transaction);
-                  log.info("Payment confirmed: paymentId={}", paymentId);
+                  logger.info("Payment confirmed: paymentId={}", paymentId);
             } else {
                   transaction.setStatus("FAILED");
                   transactionRepository.save(transaction);
-                  log.warn("Payment validation failed: paymentId={}", paymentId);
+                  logger.warn("Payment validation failed: paymentId={}", paymentId);
                   publishPaymentFailedEvent(transaction);
             }
       }
@@ -68,7 +72,7 @@ public class PaymentService {
 
       private boolean validatePaymentWithGateway(String transactionId) {
             // Mock validation - in production, call real payment gateway API
-            log.info("Validating payment with gateway: transactionId={}", transactionId);
+            logger.info("Validating payment with gateway: transactionId={}", transactionId);
             return !transactionId.contains("FAIL");
       }
 
@@ -79,7 +83,7 @@ public class PaymentService {
                         transaction.getAmount());
 
             kafkaTemplate.send(PAYMENT_CONFIRMED_TOPIC, transaction.getId(), message);
-            log.info("Payment confirmed event published to Kafka");
+            logger.info("Payment confirmed event published to Kafka");
       }
 
       private void publishPaymentFailedEvent(PaymentTransaction transaction) {
@@ -87,6 +91,6 @@ public class PaymentService {
                         transaction.getId(), transaction.getUserId());
 
             kafkaTemplate.send(PAYMENT_FAILED_TOPIC, transaction.getId(), message);
-            log.info("Payment failed event published to Kafka");
+            logger.info("Payment failed event published to Kafka");
       }
 }

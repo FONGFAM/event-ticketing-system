@@ -3,7 +3,6 @@ package com.eventticket.eventbooking.controller;
 import com.eventticket.common.dto.ApiResponse;
 import com.eventticket.common.dto.EventDto;
 import com.eventticket.eventbooking.service.EventService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,9 +11,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/events")
-@RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
+
+    public EventController(EventService eventService) {
+        this.eventService = eventService;
+    }
 
      @PostMapping
      public ResponseEntity<ApiResponse<EventDto>> createEvent(@RequestBody EventDto eventDto) {

@@ -4,8 +4,7 @@ import com.eventticket.common.dto.SeatDto;
 import com.eventticket.common.exception.SeatAlreadyHeldException;
 import com.eventticket.eventbooking.seat.entity.SeatReservation;
 import com.eventticket.eventbooking.seat.repository.SeatReservationRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -17,12 +16,15 @@ import java.time.LocalDateTime;
 
 @Service
 @Transactional
-@Slf4j
-@RequiredArgsConstructor
 public class SeatAllocationService {
      private static final Logger logger = LoggerFactory.getLogger(SeatAllocationService.class);
      private final SeatReservationRepository reservationRepository;
      private final RedisTemplate<String, String> redisTemplate;
+
+     public SeatAllocationService(SeatReservationRepository reservationRepository, RedisTemplate<String, String> redisTemplate) {
+          this.reservationRepository = reservationRepository;
+          this.redisTemplate = redisTemplate;
+     }
 
      private static final long HOLD_DURATION_MINUTES = 5;
      private static final String SEAT_LOCK_PREFIX = "seat_lock:";

@@ -3,16 +3,18 @@ package com.eventticket.payment.controller;
 import com.eventticket.common.dto.ApiResponse;
 import com.eventticket.payment.entity.PaymentTransaction;
 import com.eventticket.payment.service.PaymentService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/payments")
-@RequiredArgsConstructor
 public class PaymentController {
      private final PaymentService paymentService;
+
+     public PaymentController(PaymentService paymentService) {
+          this.paymentService = paymentService;
+     }
 
      @PostMapping
      public ResponseEntity<ApiResponse<String>> createPayment(
