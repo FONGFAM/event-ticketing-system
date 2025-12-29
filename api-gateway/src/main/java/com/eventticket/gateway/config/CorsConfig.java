@@ -15,6 +15,9 @@ public class CorsConfig {
           corsConfig.setAllowCredentials(true);
           corsConfig.addAllowedOrigin("http://localhost:3000");
           corsConfig.addAllowedOrigin("http://localhost:3001");
+          corsConfig.addAllowedOrigin("http://localhost:8080");
+          corsConfig.addAllowedOrigin("http://127.0.0.1:8080");
+          corsConfig.addAllowedOrigin("http://[::1]:8080");
           corsConfig.addAllowedMethod("GET");
           corsConfig.addAllowedMethod("POST");
           corsConfig.addAllowedMethod("PUT");

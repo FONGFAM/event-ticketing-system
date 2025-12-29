@@ -48,7 +48,9 @@ class PaymentServiceTest {
 
         assertNotNull(paymentId);
         assertEquals("payment-123", paymentId);
-        verify(transactionRepository, times(1)).save(any(PaymentTransaction.class));
+        assertEquals("CONFIRMED", testTransaction.getStatus());
+        assertNotNull(testTransaction.getTransactionId());
+        verify(transactionRepository, times(2)).save(any(PaymentTransaction.class));
     }
 
     @Test

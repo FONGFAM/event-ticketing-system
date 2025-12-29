@@ -26,6 +26,9 @@ public class Event {
      @Column(columnDefinition = "TEXT")
      private String description;
 
+     @Column
+     private Double price;
+
      @Column(nullable = false)
      private int totalSeats;
 
@@ -44,7 +47,7 @@ public class Event {
      public Event() {}
 
      public Event(String id, String name, String venueName, LocalDateTime startTime, LocalDateTime endTime,
-                  String description, int totalSeats, int availableSeats, int soldSeats,
+                  String description, Double price, int totalSeats, int availableSeats, int soldSeats,
                   LocalDateTime createdAt, LocalDateTime updatedAt) {
           this.id = id;
           this.name = name;
@@ -52,6 +55,7 @@ public class Event {
           this.startTime = startTime;
           this.endTime = endTime;
           this.description = description;
+          this.price = price;
           this.totalSeats = totalSeats;
           this.availableSeats = availableSeats;
           this.soldSeats = soldSeats;
@@ -76,6 +80,9 @@ public class Event {
 
      public String getDescription() { return description; }
      public void setDescription(String description) { this.description = description; }
+
+     public Double getPrice() { return price; }
+     public void setPrice(Double price) { this.price = price; }
 
      public int getTotalSeats() { return totalSeats; }
      public void setTotalSeats(int totalSeats) { this.totalSeats = totalSeats; }
@@ -103,6 +110,7 @@ public class Event {
           private LocalDateTime startTime;
           private LocalDateTime endTime;
           private String description;
+          private Double price;
           private int totalSeats;
           private int availableSeats;
           private int soldSeats;
@@ -115,6 +123,7 @@ public class Event {
           public EventBuilder startTime(LocalDateTime startTime) { this.startTime = startTime; return this; }
           public EventBuilder endTime(LocalDateTime endTime) { this.endTime = endTime; return this; }
           public EventBuilder description(String description) { this.description = description; return this; }
+          public EventBuilder price(Double price) { this.price = price; return this; }
           public EventBuilder totalSeats(int totalSeats) { this.totalSeats = totalSeats; return this; }
           public EventBuilder availableSeats(int availableSeats) { this.availableSeats = availableSeats; return this; }
           public EventBuilder soldSeats(int soldSeats) { this.soldSeats = soldSeats; return this; }
@@ -122,7 +131,7 @@ public class Event {
           public EventBuilder updatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; return this; }
 
           public Event build() {
-               return new Event(id, name, venueName, startTime, endTime, description, totalSeats, availableSeats, soldSeats, createdAt, updatedAt);
+               return new Event(id, name, venueName, startTime, endTime, description, price, totalSeats, availableSeats, soldSeats, createdAt, updatedAt);
           }
      }
 

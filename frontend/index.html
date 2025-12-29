@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống bán vé sự kiện</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -23,28 +26,84 @@
     <!-- Main Content -->
     <div class="container">
         <!-- Home Page -->
-        <div id="home" class="page">
-            <h2>Chào mừng đến Event Ticketing System</h2>
-            <p>Hệ thống bán vé trực tuyến cho các sự kiện</p>
-            <div class="stats">
-                <div class="stat-box">
-                    <h3>Sự kiện</h3>
-                    <p id="eventCount">0</p>
+        <div id="home" class="page page--home">
+            <section class="hero">
+                <div class="hero-left">
+                    <span class="pill">Nền tảng bán vé thông minh</span>
+                    <h2 class="hero-title">Tổ chức, bán vé và theo dõi doanh thu sự kiện trong một bảng điều khiển.</h2>
+                    <p class="hero-subtitle">Hệ thống tối ưu cho đội vận hành: quản lý chỗ ngồi, giá vé, khách hàng và báo cáo theo thời gian thực.</p>
+                    <div class="hero-actions">
+                        <button class="btn btn-primary" onclick="showPage('events')">Khám phá sự kiện</button>
+                        <button class="btn btn-secondary" onclick="showPage('bookings')">Đặt vé nhanh</button>
+                    </div>
+                    <div class="hero-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Phản hồi</span>
+                            <span class="meta-value">2 phút</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Bảo mật</span>
+                            <span class="meta-value">Chuẩn PCI</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Hỗ trợ</span>
+                            <span class="meta-value">24/7</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <h3>Vé bán</h3>
-                    <p id="ticketCount">0</p>
+                <div class="hero-right">
+                    <div class="live-card">
+                        <div class="live-header">
+                            <span>📡 Live dashboard</span>
+                            <span class="live-pill">Đang cập nhật</span>
+                        </div>
+                        <div class="stats stats--hero">
+                            <div class="stat-box">
+                                <h3>Sự kiện</h3>
+                                <p id="eventCount">0</p>
+                            </div>
+                            <div class="stat-box">
+                                <h3>Vé bán</h3>
+                                <p id="ticketCount">0</p>
+                            </div>
+                            <div class="stat-box">
+                                <h3>Doanh thu</h3>
+                                <p id="revenueCount">0 VNĐ</p>
+                            </div>
+                        </div>
+                        <div class="live-footer">
+                            <span>⏱️ Cập nhật mỗi 5 phút</span>
+                            <span>🌍 5 thành phố</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <h3>Doanh thu</h3>
-                    <p id="revenueCount">0 VNĐ</p>
+            </section>
+
+            <section class="highlights">
+                <div class="highlight-card">
+                    <h3>Quản lý tập trung</h3>
+                    <p>Tạo sự kiện, kiểm soát sức chứa và tối ưu chiến dịch bán vé theo từng kênh.</p>
                 </div>
-            </div>
+                <div class="highlight-card">
+                    <h3>Trải nghiệm mượt</h3>
+                    <p>Quy trình đặt vé tối giản giúp khách hàng thanh toán nhanh hơn, ít thao tác hơn.</p>
+                </div>
+                <div class="highlight-card">
+                    <h3>Phân tích sâu</h3>
+                    <p>Báo cáo doanh thu, tỉ lệ bán, sự kiện nổi bật giúp ra quyết định nhanh.</p>
+                </div>
+            </section>
         </div>
 
         <!-- Events Page -->
         <div id="events" class="page" style="display:none;">
-            <h2>Danh sách sự kiện</h2>
+            <div class="page-header">
+                <div>
+                    <h2>Danh sách sự kiện</h2>
+                    <p class="page-subtitle">Chọn sự kiện phù hợp, xem giá vé và số chỗ còn lại.</p>
+                </div>
+                <button class="btn btn-secondary" onclick="showPage('bookings')">Đặt vé ngay</button>
+            </div>
             <div id="eventsList" class="events-grid">
                 <!-- Events sẽ được load ở đây -->
             </div>
@@ -52,33 +111,41 @@
 
         <!-- Book Ticket Page -->
         <div id="bookings" class="page" style="display:none;">
-            <h2>Đặt vé</h2>
+            <div class="page-header">
+                <div>
+                    <h2>Đặt vé</h2>
+                    <p class="page-subtitle">Điền thông tin khách hàng và xác nhận chỗ ngồi chỉ trong vài bước.</p>
+                </div>
+                <div class="badge">Thanh toán an toàn</div>
+            </div>
             <form id="bookingForm" class="form">
-                <div class="form-group">
-                    <label>Chọn sự kiện:</label>
-                    <select id="eventSelect" required>
-                        <option value="">-- Chọn sự kiện --</option>
-                    </select>
-                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Chọn sự kiện:</label>
+                        <select id="eventSelect" required>
+                            <option value="">-- Chọn sự kiện --</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label>Số lượng vé:</label>
-                    <input type="number" id="seatCount" min="1" value="1" required>
-                </div>
+                    <div class="form-group">
+                        <label>Số lượng vé:</label>
+                        <input type="number" id="seatCount" min="1" value="1" required>
+                    </div>
 
-                <div class="form-group">
-                    <label>Tên khách hàng:</label>
-                    <input type="text" id="userName" required>
-                </div>
+                    <div class="form-group">
+                        <label>Tên khách hàng:</label>
+                        <input type="text" id="userName" required>
+                    </div>
 
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="userEmail" required>
-                </div>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="userEmail" required>
+                    </div>
 
-                <div class="form-group">
-                    <label>Số điện thoại:</label>
-                    <input type="tel" id="userPhone" required>
+                    <div class="form-group">
+                        <label>Số điện thoại:</label>
+                        <input type="tel" id="userPhone" required>
+                    </div>
                 </div>
 
                 <button type="button" onclick="bookTicket()" class="btn btn-primary">Đặt vé</button>
@@ -89,7 +156,12 @@
 
         <!-- Bookings List Page -->
         <div id="bookings-list" class="page" style="display:none;">
-            <h2>Lịch sử đặt vé</h2>
+            <div class="page-header">
+                <div>
+                    <h2>Lịch sử đặt vé</h2>
+                    <p class="page-subtitle">Theo dõi các đơn đặt vé gần đây của khách hàng.</p>
+                </div>
+            </div>
             <div id="bookingsList" class="table-container">
                 <!-- Bookings sẽ được load ở đây -->
             </div>
@@ -97,7 +169,13 @@
 
         <!-- Reports Page -->
         <div id="reports" class="page" style="display:none;">
-            <h2>Báo cáo</h2>
+            <div class="page-header">
+                <div>
+                    <h2>Báo cáo</h2>
+                    <p class="page-subtitle">Tổng hợp tình hình bán vé và hiệu quả sự kiện.</p>
+                </div>
+                <button class="btn btn-secondary" onclick="showPage('events')">Xem sự kiện</button>
+            </div>
             <div class="report-section">
                 <h3>Thống kê bán hàng</h3>
                 <div id="reportsList">

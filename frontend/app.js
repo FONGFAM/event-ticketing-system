@@ -1,11 +1,38 @@
 // ============= Main Application Logic =============
 
-let currentUser = {
-    id: 'user_' + Math.random().toString(36).substr(2, 9),
-    name: '',
-    email: '',
-    phone: ''
-};
+const USER_STORAGE_KEY = 'eventTicketingUser';
+
+function createGuestUser() {
+    return {
+        id: 'user_' + Math.random().toString(36).slice(2, 11),
+        name: '',
+        email: '',
+        phone: ''
+    };
+}
+
+function loadCurrentUser() {
+    try {
+        const stored = localStorage.getItem(USER_STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.id) {
+                return parsed;
+            }
+        }
+    } catch (error) {
+        console.log('Failed to load user from storage:', error);
+    }
+    const fresh = createGuestUser();
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(fresh));
+    return fresh;
+}
+
+function saveCurrentUser() {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser));
+}
+
+let currentUser = loadCurrentUser();
 
 let events = [];
 let bookings = [];
@@ -14,6 +41,9 @@ let bookings = [];
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
     showPage('home');
+    setInterval(() => {
+        loadEvents();
+    }, 5 * 60 * 1000);
 });
 
 // ============= Page Navigation =============
@@ -27,6 +57,7 @@ function showPage(pageName) {
     if (pageName === 'bookings') {
         // Show both booking form and history
         document.getElementById('bookings').style.display = 'block';
+        document.getElementById('bookings-list').style.display = 'block';
     } else {
         const page = document.getElementById(pageName);
         if (page) page.style.display = 'block';
@@ -37,6 +68,7 @@ function showPage(pageName) {
         loadEvents();
     } else if (pageName === 'bookings') {
         loadEventOptions();
+        loadBookings();
     } else if (pageName === 'reports') {
         loadReports();
     }
@@ -45,50 +77,70 @@ function showPage(pageName) {
 // ============= Data Loading =============
 
 function loadData() {
-    // Load mock events as fallback
-    events = mockEvents;
-    updateStats();
-    loadEventOptions();
+    loadEvents().then(() => {
+        loadBookings();
+    });
 }
 
 async function loadEvents() {
     try {
-        // Try to fetch from API, fall back to mock data
         const apiEvents = await fetchEvents();
-        events = apiEvents.length > 0 ? apiEvents : mockEvents;
+        events = apiEvents;
     } catch (error) {
-        console.log('Using mock data:', error);
-        events = mockEvents;
+        console.log('Failed to load events:', error);
+        events = [];
     }
 
     const eventsList = document.getElementById('eventsList');
     eventsList.innerHTML = '';
 
+    if (events.length === 0) {
+        eventsList.innerHTML = '<p>Không tải được dữ liệu sự kiện từ hệ thống.</p>';
+        updateStats();
+        loadEventOptions();
+        return;
+    }
+
     events.forEach(event => {
+        const venueName = event.venueName || event.venue || 'N/A';
+        const price = typeof event.price === 'number' ? event.price : 0;
+        const availableSeats = typeof event.availableSeats === 'number' ? event.availableSeats : 0;
         const card = document.createElement('div');
         card.className = 'event-card';
         card.innerHTML = `
             <h3>${event.name}</h3>
-            <p><strong>📍 Địa điểm:</strong> ${event.venue}</p>
+            <p><strong>📍 Địa điểm:</strong> ${venueName}</p>
             <p><strong>📅 Ngày:</strong> ${new Date(event.startTime).toLocaleDateString('vi-VN')}</p>
             <p><strong>⏰ Giờ:</strong> ${new Date(event.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</p>
             <div class="event-info">
-                <span>💰 ${event.price.toLocaleString('vi-VN')} VNĐ</span>
-                <span>🎫 ${event.availableSeats} vé trống</span>
+                <span>💰 ${price.toLocaleString('vi-VN')} VNĐ</span>
+                <span>🎫 ${availableSeats} vé trống</span>
             </div>
         `;
         eventsList.appendChild(card);
     });
+    updateStats();
+    loadEventOptions();
+    renderBookings();
 }
 
 function loadEventOptions() {
     const select = document.getElementById('eventSelect');
     select.innerHTML = '<option value="">-- Chọn sự kiện --</option>';
 
+    if (events.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.text = 'Không có dữ liệu sự kiện';
+        select.appendChild(option);
+        return;
+    }
+
     events.forEach(event => {
+        const price = typeof event.price === 'number' ? event.price : 0;
         const option = document.createElement('option');
         option.value = event.id;
-        option.text = `${event.name} - ${event.price.toLocaleString('vi-VN')} VNĐ`;
+        option.text = `${event.name} - ${price.toLocaleString('vi-VN')} VNĐ`;
         select.appendChild(option);
     });
 }
@@ -97,9 +149,13 @@ async function loadReports() {
     const reportsList = document.getElementById('reportsList');
     
     try {
-        // Try API, fallback to mock
         const reports = await fetchReports();
-        const data = reports.length > 0 ? reports : mockReports;
+        const data = reports && typeof reports === 'object' ? reports : null;
+
+        if (!data) {
+            reportsList.innerHTML = '<p>Không tải được dữ liệu báo cáo.</p>';
+            return;
+        }
         
         reportsList.innerHTML = `
             <div class="report-item">
@@ -128,8 +184,74 @@ async function loadReports() {
             </div>
         `;
     } catch (error) {
-        reportsList.innerHTML = '<p>Lỗi tải báo cáo</p>';
+        reportsList.innerHTML = '<p>Không tải được dữ liệu báo cáo.</p>';
     }
+}
+
+async function loadBookings() {
+    const bookingsList = document.getElementById('bookingsList');
+    if (bookingsList) {
+        bookingsList.innerHTML = '<p>Đang tải dữ liệu đặt vé...</p>';
+    }
+
+    try {
+        const userBookings = await getUserBookings(currentUser.id);
+        bookings = Array.isArray(userBookings) ? userBookings : [];
+    } catch (error) {
+        bookings = [];
+    }
+
+    renderBookings();
+    updateStats();
+}
+
+function renderBookings() {
+    const bookingsList = document.getElementById('bookingsList');
+    if (!bookingsList) {
+        return;
+    }
+
+    if (!bookings.length) {
+        bookingsList.innerHTML = '<p>Chưa có vé nào được lưu trong hệ thống.</p>';
+        return;
+    }
+
+    const rows = bookings.map((ticket, index) => {
+        const eventInfo = events.find(item => item.id === ticket.eventId);
+        const eventName = eventInfo ? eventInfo.name : ticket.eventId;
+        const price = eventInfo && typeof eventInfo.price === 'number' ? eventInfo.price : 0;
+        const createdAt = ticket.createdAt ? formatTimestamp(ticket.createdAt) : 'N/A';
+        const status = ticket.status || 'N/A';
+
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${eventName}</td>
+                <td>${ticket.seatId || 'N/A'}</td>
+                <td>${price.toLocaleString('vi-VN')} VNĐ</td>
+                <td>${status}</td>
+                <td>${createdAt}</td>
+            </tr>
+        `;
+    }).join('');
+
+    bookingsList.innerHTML = `
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Sự kiện</th>
+                    <th>Ghế</th>
+                    <th>Giá vé</th>
+                    <th>Trạng thái</th>
+                    <th>Thời gian</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows}
+            </tbody>
+        </table>
+    `;
 }
 
 // ============= Booking Function =============
@@ -142,6 +264,7 @@ async function bookTicket() {
     const userPhone = document.getElementById('userPhone').value;
 
     const messageDiv = document.getElementById('bookingMessage');
+    let reservedSeats = [];
 
     if (!eventId || !userName || !userEmail || !userPhone) {
         messageDiv.className = 'message error';
@@ -167,31 +290,51 @@ async function bookTicket() {
     }
 
     try {
-        // Mock booking (in production, call API)
-        const bookingData = {
+        messageDiv.className = 'message';
+        messageDiv.textContent = '⏳ Đang giữ chỗ và xử lý thanh toán...';
+        messageDiv.style.display = 'block';
+
+        currentUser.name = userName;
+        currentUser.email = userEmail;
+        currentUser.phone = userPhone;
+        saveCurrentUser();
+
+        reservedSeats = await reserveSeats(eventId, currentUser.id, seatCount);
+
+        if (reservedSeats.length !== seatCount) {
+            throw new Error('Không đủ chỗ trống để giữ');
+        }
+
+        const ticketPrice = typeof selectedEvent.price === 'number' ? selectedEvent.price : 0;
+        const totalPrice = ticketPrice * seatCount;
+        const paymentId = await processPayment({
             userId: currentUser.id,
             eventId: eventId,
-            seatCount: seatCount,
-            totalPrice: selectedEvent.price * seatCount,
-            userName: userName,
-            userEmail: userEmail,
-            userPhone: userPhone,
-            bookingDate: new Date().toISOString(),
-            status: 'PENDING'
-        };
+            amount: totalPrice,
+            paymentMethod: 'CARD'
+        });
 
-        // Save booking locally
-        bookings.push(bookingData);
+        for (const seat of reservedSeats) {
+            await createTicket({
+                eventId: eventId,
+                seatId: seat.id,
+                userId: currentUser.id,
+                paymentId: paymentId
+            });
+            await confirmSeat(eventId, seat.id, currentUser.id);
+        }
 
-        // Update available seats
-        selectedEvent.availableSeats -= seatCount;
+        // Update available seats for UI
+        if (typeof selectedEvent.availableSeats === 'number') {
+            selectedEvent.availableSeats = Math.max(0, selectedEvent.availableSeats - seatCount);
+        }
 
         messageDiv.className = 'message success';
         messageDiv.innerHTML = `
             ✅ <strong>Đặt vé thành công!</strong><br>
             Sự kiện: ${selectedEvent.name}<br>
             Số vé: ${seatCount}<br>
-            Tổng giá: ${(selectedEvent.price * seatCount).toLocaleString('vi-VN')} VNĐ<br>
+            Tổng giá: ${totalPrice.toLocaleString('vi-VN')} VNĐ<br>
             <em>Hóa đơn đã gửi đến email: ${userEmail}</em>
         `;
         messageDiv.style.display = 'block';
@@ -199,29 +342,49 @@ async function bookTicket() {
         // Clear form
         document.getElementById('bookingForm').reset();
 
-        // Update stats
-        updateStats();
-
-        // Try to save to API
-        try {
-            await bookSeats(bookingData);
-        } catch (error) {
-            console.log('API call failed, booking saved locally');
-        }
+        await loadBookings();
 
     } catch (error) {
+        for (const seat of reservedSeats) {
+            try {
+                await releaseSeat(eventId, seat.id, currentUser.id);
+            } catch (releaseError) {
+                console.log('Release failed:', releaseError);
+            }
+        }
         messageDiv.className = 'message error';
-        messageDiv.textContent = '❌ Lỗi: ' + error.message;
+        messageDiv.textContent = '❌ Lỗi: ' + (error.message || 'Không thể đặt vé');
         messageDiv.style.display = 'block';
     }
 }
 
 // ============= Statistics =============
 
-function updateStats() {
-    const totalEvents = events.length;
-    const totalTicketsSold = bookings.reduce((sum, b) => sum + b.seatCount, 0);
-    const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
+async function updateStats() {
+    let totalEvents = events.length;
+    let totalTicketsSold = bookings.length;
+    let totalRevenue = bookings.reduce((sum, ticket) => {
+        const eventInfo = events.find(item => item.id === ticket.eventId);
+        const price = eventInfo && typeof eventInfo.price === 'number' ? eventInfo.price : 0;
+        return sum + price;
+    }, 0);
+
+    try {
+        const reports = await fetchReports();
+        if (reports && typeof reports === 'object') {
+            if (typeof reports.totalEvents === 'number') {
+                totalEvents = reports.totalEvents;
+            }
+            if (typeof reports.totalTicketsSold === 'number') {
+                totalTicketsSold = reports.totalTicketsSold;
+            }
+            if (typeof reports.totalRevenue === 'number') {
+                totalRevenue = reports.totalRevenue;
+            }
+        }
+    } catch (error) {
+        console.log('Failed to refresh live dashboard:', error);
+    }
 
     document.getElementById('eventCount').textContent = totalEvents;
     document.getElementById('ticketCount').textContent = totalTicketsSold.toLocaleString('vi-VN');
@@ -240,4 +403,12 @@ function formatTime(dateString) {
 
 function formatCurrency(amount) {
     return amount.toLocaleString('vi-VN') + ' VNĐ';
+}
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) {
+        return 'N/A';
+    }
+    return date.toLocaleString('vi-VN');
 }

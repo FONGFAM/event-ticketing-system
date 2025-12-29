@@ -1,6 +1,26 @@
 // ============= API Configuration =============
 
 const API_BASE_URL = 'http://localhost:8000/api';
+const API_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        return response;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+function wrapApiError(error) {
+    if (error && error.name === 'AbortError') {
+        return new Error('Timeout khi gọi API, vui lòng thử lại.');
+    }
+    return error;
+}
 
 // Helper function to make API calls
 async function apiCall(endpoint, method = 'GET', data = null) {
@@ -16,8 +36,8 @@ async function apiCall(endpoint, method = 'GET', data = null) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-        
+        const response = await fetchWithTimeout(`${API_BASE_URL}${endpoint}`, options);
+
         if (!response.ok) {
             throw new Error(`API Error: ${response.statusText}`);
         }
@@ -25,8 +45,35 @@ async function apiCall(endpoint, method = 'GET', data = null) {
         const result = await response.json();
         return result;
     } catch (error) {
-        console.error('API Call Error:', error);
-        throw error;
+        const wrapped = wrapApiError(error);
+        console.error('API Call Error:', wrapped);
+        throw wrapped;
+    }
+}
+
+async function apiCallWithParams(endpoint, method = 'GET', params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const url = query ? `${API_BASE_URL}${endpoint}?${query}` : `${API_BASE_URL}${endpoint}`;
+    const options = {
+        method,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
+    try {
+        const response = await fetchWithTimeout(url, options);
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        const wrapped = wrapApiError(error);
+        console.error('API Call Error:', wrapped);
+        throw wrapped;
     }
 }
 
@@ -48,12 +95,44 @@ async function createEvent(eventData) {
 
 // ============= Seats API =============
 
-async function bookSeats(bookingData) {
+async function reserveSeats(eventId, userId, quantity) {
     try {
-        const response = await apiCall('/seats/reserve', 'POST', bookingData);
-        return response;
+        const response = await apiCall('/seats/reserve', 'POST', {
+            eventId,
+            userId,
+            quantity
+        });
+        return response.data || [];
     } catch (error) {
-        console.error('Error booking seats:', error);
+        console.error('Error reserving seats:', error);
+        throw error;
+    }
+}
+
+async function confirmSeat(eventId, seatId, userId) {
+    try {
+        const response = await apiCallWithParams('/seats/confirm', 'POST', {
+            eventId,
+            seatId,
+            userId
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error confirming seat:', error);
+        throw error;
+    }
+}
+
+async function releaseSeat(eventId, seatId, userId) {
+    try {
+        const response = await apiCallWithParams('/seats/release', 'POST', {
+            eventId,
+            seatId,
+            userId
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error releasing seat:', error);
         throw error;
     }
 }
@@ -72,8 +151,8 @@ async function getAvailableSeats(eventId) {
 
 async function processPayment(paymentData) {
     try {
-        const response = await apiCall('/payments', 'POST', paymentData);
-        return response;
+        const response = await apiCallWithParams('/payments', 'POST', paymentData);
+        return response.data;
     } catch (error) {
         console.error('Error processing payment:', error);
         throw error;
@@ -81,6 +160,16 @@ async function processPayment(paymentData) {
 }
 
 // ============= Bookings API =============
+
+async function createTicket(ticketData) {
+    try {
+        const response = await apiCallWithParams('/tickets', 'POST', ticketData);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating ticket:', error);
+        throw error;
+    }
+}
 
 async function getUserBookings(userId) {
     try {
@@ -125,47 +214,3 @@ async function fetchNotifications(userId) {
         return [];
     }
 }
-
-// ============= Mock Data (for offline testing) =============
-
-const mockEvents = [
-    {
-        id: '1',
-        name: 'Taylor Swift Concert',
-        venue: 'Sân Mỹ Đình',
-        startTime: '2025-03-15T19:00:00',
-        endTime: '2025-03-15T22:00:00',
-        totalSeats: 10000,
-        availableSeats: 8500,
-        price: 500000
-    },
-    {
-        id: '2',
-        name: 'BTS Permission to Dance',
-        venue: 'Trung tâm Hội chợ Triển lãm',
-        startTime: '2025-04-20T18:00:00',
-        endTime: '2025-04-20T21:00:00',
-        totalSeats: 20000,
-        availableSeats: 12000,
-        price: 750000
-    },
-    {
-        id: '3',
-        name: 'Coldplay Live Tour',
-        venue: 'Nhà thi đấu Phú Thọ',
-        startTime: '2025-05-10T19:30:00',
-        endTime: '2025-05-10T22:30:00',
-        totalSeats: 8000,
-        availableSeats: 3000,
-        price: 600000
-    }
-];
-
-const mockReports = {
-    totalEvents: 45,
-    totalTicketsSold: 125000,
-    totalRevenue: 187500000,
-    averageTicketPrice: 1500,
-    topEvent: 'Taylor Swift Concert',
-    weeklyRevenue: 45000000
-};

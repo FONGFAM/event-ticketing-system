@@ -27,7 +27,7 @@ public class EventController {
      }
 
      @GetMapping("/{eventId}")
-     public ResponseEntity<ApiResponse<EventDto>> getEvent(@PathVariable String eventId) {
+     public ResponseEntity<ApiResponse<EventDto>> getEvent(@PathVariable("eventId") String eventId) {
           EventDto event = eventService.getEvent(eventId);
           return ResponseEntity.ok(ApiResponse.ok(event));
      }

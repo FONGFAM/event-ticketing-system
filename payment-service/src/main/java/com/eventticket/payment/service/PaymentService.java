@@ -35,7 +35,16 @@ public class PaymentService {
                         .build();
 
             PaymentTransaction saved = transactionRepository.save(transaction);
-            logger.info("Payment created with status PENDING: paymentId={}", saved.getId());
+            String transactionId = "AUTO-" + saved.getId();
+            saved.setStatus("CONFIRMED");
+            saved.setTransactionId(transactionId);
+            transactionRepository.save(saved);
+            try {
+                  publishPaymentConfirmedEvent(saved);
+            } catch (Exception ex) {
+                  logger.warn("Failed to publish payment confirmed event: paymentId={}, error={}", saved.getId(), ex.getMessage());
+            }
+            logger.info("Payment auto-confirmed: paymentId={}", saved.getId());
 
             return saved.getId();
       }
@@ -65,10 +74,14 @@ public class PaymentService {
             }
       }
 
-      public PaymentTransaction getPaymentStatus(String paymentId) {
-            return transactionRepository.findById(paymentId)
-                        .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
-      }
+     public PaymentTransaction getPaymentStatus(String paymentId) {
+          return transactionRepository.findById(paymentId)
+                    .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
+     }
+
+     public java.util.List<PaymentTransaction> getAllPayments() {
+          return transactionRepository.findAll();
+     }
 
       private boolean validatePaymentWithGateway(String transactionId) {
             // Mock validation - in production, call real payment gateway API

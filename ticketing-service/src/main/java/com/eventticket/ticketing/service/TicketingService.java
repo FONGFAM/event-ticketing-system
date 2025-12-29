@@ -33,7 +33,7 @@ public class TicketingService {
       * Khi Payment Service publish PaymentConfirmed event,
       * Ticketing Service sẽ nhận được và tạo ticket
       */
-     @KafkaListener(topics = "payment-confirmed", groupId = "ticketing-service")
+     @KafkaListener(topics = "payment-confirmed", groupId = "${spring.application.name}")
      public void onPaymentConfirmed(String message) {
           logger.info("Received PaymentConfirmed event: {}", message);
           // Parse message and create tickets
@@ -82,6 +82,13 @@ public class TicketingService {
 
      public List<TicketDto> getEventTickets(String eventId) {
           return ticketRepository.findByEventId(eventId)
+                    .stream()
+                    .map(this::mapToDto)
+                    .toList();
+     }
+
+     public List<TicketDto> getAllTickets() {
+          return ticketRepository.findAll()
                     .stream()
                     .map(this::mapToDto)
                     .toList();

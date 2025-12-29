@@ -12,7 +12,7 @@ public class NotificationService {
      public NotificationService() {
      }
 
-     @KafkaListener(topics = "ticket-created", groupId = "notification-service")
+     @KafkaListener(topics = "ticket-created", groupId = "${spring.application.name}")
      public void onTicketCreated(String message) {
           logger.info("Received TicketCreated event: {}", message);
           // Parse message and send email
@@ -20,7 +20,7 @@ public class NotificationService {
           sendTicketEmail();
      }
 
-     @KafkaListener(topics = "payment-failed", groupId = "notification-service")
+     @KafkaListener(topics = "payment-failed", groupId = "${spring.application.name}")
      public void onPaymentFailed(String message) {
           logger.info("Received PaymentFailed event: {}", message);
           // Send notification about failed payment

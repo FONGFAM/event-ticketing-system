@@ -16,16 +16,16 @@ public class ApiGatewayApplication {
      @Bean
      public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
           return builder.routes()
-                    .route("event-booking-service", r -> r
+                    .route("event-booking-service-Quý", r -> r
                               .path("/api/events/**", "/api/seats/**")
                               .uri("http://localhost:8001"))
-                    .route("payment-service", r -> r
+                    .route("payment-service-Tiền", r -> r
                               .path("/api/payments/**")
                               .uri("http://localhost:8003"))
-                    .route("ticketing-service", r -> r
+                    .route("ticketing-service-Phong", r -> r
                               .path("/api/tickets/**")
                               .uri("http://localhost:8004"))
-                    .route("notification-analytics-service", r -> r
+                    .route("notification-analytics-service-Sơn", r -> r
                               .path("/api/notifications/**", "/api/reports/**")
                               .uri("http://localhost:8005"))
                     .build();

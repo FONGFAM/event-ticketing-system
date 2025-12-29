@@ -1,10 +1,13 @@
 spring:
   application:
-    name: api-gateway
+    name: api-gateway-Đại
   cloud:
     gateway:
       default-filters:
         - AddRequestHeader=X-Request-Id, ${random.uuid}
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 8s
 
 server:
   port: 8000
