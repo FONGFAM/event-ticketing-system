@@ -3,20 +3,25 @@ package com.eventticket.eventbooking.service;
 import com.eventticket.common.dto.EventDto;
 import com.eventticket.common.exception.ResourceNotFoundException;
 import com.eventticket.eventbooking.entity.Event;
+import com.eventticket.eventbooking.entity.Seat;
 import com.eventticket.eventbooking.repository.EventRepository;
+import com.eventticket.eventbooking.repository.SeatRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @Transactional
 public class EventService {
      private final EventRepository eventRepository;
+     private final SeatRepository seatRepository;
 
-     public EventService(EventRepository eventRepository) {
+     public EventService(EventRepository eventRepository, SeatRepository seatRepository) {
           this.eventRepository = eventRepository;
+          this.seatRepository = seatRepository;
      }
 
      public EventDto createEvent(EventDto eventDto) {
@@ -33,7 +38,39 @@ public class EventService {
                     .build();
 
           Event savedEvent = eventRepository.save(event);
+
+          // Generate seats automatically
+          generateSeatsForEvent(savedEvent);
+
           return mapToDto(savedEvent);
+     }
+
+     private void generateSeatsForEvent(Event event) {
+          int totalSeats = event.getTotalSeats();
+          int seatsPerRow = 10;
+          List<Seat> seats = new ArrayList<>();
+
+          int currentSeat = 0;
+          int rowIndex = 0;
+
+          while (currentSeat < totalSeats) {
+               String rowLetter = String.valueOf((char) ('A' + rowIndex));
+               int seatsInThisRow = Math.min(seatsPerRow, totalSeats - currentSeat);
+
+               for (int col = 1; col <= seatsInThisRow; col++) {
+                    Seat seat = Seat.builder()
+                              .eventId(event.getId())
+                              .row(rowLetter)
+                              .col(col)
+                              .status("AVAILABLE")
+                              .build();
+                    seats.add(seat);
+                    currentSeat++;
+               }
+               rowIndex++;
+          }
+
+          seatRepository.saveAll(seats);
      }
 
      public EventDto getEvent(String eventId) {

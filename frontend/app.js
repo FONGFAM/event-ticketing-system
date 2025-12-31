@@ -36,6 +36,10 @@ let currentUser = loadCurrentUser();
 
 let events = [];
 let bookings = [];
+let currentBookingPage = 1;
+const bookingsPerPage = 5;
+let currentEventPage = 1;
+const eventsPerPage = 3;
 
 // Initialize app when page loads
 document.addEventListener('DOMContentLoaded', () => {
@@ -91,17 +95,35 @@ async function loadEvents() {
         events = [];
     }
 
+    renderEvents();
+    updateStats();
+    loadEventOptions();
+    renderBookings();
+}
+
+function renderEvents() {
     const eventsList = document.getElementById('eventsList');
     eventsList.innerHTML = '';
 
     if (events.length === 0) {
         eventsList.innerHTML = '<p>Không tải được dữ liệu sự kiện từ hệ thống.</p>';
-        updateStats();
-        loadEventOptions();
         return;
     }
 
-    events.forEach(event => {
+    // Pagination logic
+    const totalPages = Math.ceil(events.length / eventsPerPage);
+    currentEventPage = Math.min(currentEventPage, totalPages);
+    currentEventPage = Math.max(currentEventPage, 1);
+
+    const startIndex = (currentEventPage - 1) * eventsPerPage;
+    const endIndex = startIndex + eventsPerPage;
+    const paginatedEvents = events.slice(startIndex, endIndex);
+
+    // Create events grid container
+    const eventsGrid = document.createElement('div');
+    eventsGrid.className = 'events-grid';
+
+    paginatedEvents.forEach(event => {
         const venueName = event.venueName || event.venue || 'N/A';
         const price = typeof event.price === 'number' ? event.price : 0;
         const availableSeats = typeof event.availableSeats === 'number' ? event.availableSeats : 0;
@@ -111,17 +133,49 @@ async function loadEvents() {
             <h3>${event.name}</h3>
             <p><strong>📍 Địa điểm:</strong> ${venueName}</p>
             <p><strong>📅 Ngày:</strong> ${new Date(event.startTime).toLocaleDateString('vi-VN')}</p>
-            <p><strong>⏰ Giờ:</strong> ${new Date(event.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</p>
+            <p><strong>⏰ Giờ:</strong> ${new Date(event.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
             <div class="event-info">
                 <span>💰 ${price.toLocaleString('vi-VN')} VNĐ</span>
                 <span>🎫 ${availableSeats} vé trống</span>
             </div>
         `;
-        eventsList.appendChild(card);
+        eventsGrid.appendChild(card);
     });
-    updateStats();
-    loadEventOptions();
-    renderBookings();
+
+    eventsList.appendChild(eventsGrid);
+
+    // Generate pagination buttons
+    if (totalPages > 1) {
+        const paginationHtml = document.createElement('div');
+        paginationHtml.className = 'pagination';
+        paginationHtml.innerHTML = `
+            <button class="pagination-btn" onclick="changeEventPage(1)" ${currentEventPage === 1 ? 'disabled' : ''}>
+                ⟪
+            </button>
+            <button class="pagination-btn" onclick="changeEventPage(${currentEventPage - 1})" ${currentEventPage === 1 ? 'disabled' : ''}>
+                ◀
+            </button>
+            <span class="pagination-info">Trang ${currentEventPage} / ${totalPages}</span>
+            <button class="pagination-btn" onclick="changeEventPage(${currentEventPage + 1})" ${currentEventPage === totalPages ? 'disabled' : ''}>
+                ▶
+            </button>
+            <button class="pagination-btn" onclick="changeEventPage(${totalPages})" ${currentEventPage === totalPages ? 'disabled' : ''}>
+                ⟫
+            </button>
+        `;
+        eventsList.appendChild(paginationHtml);
+    }
+
+    // Add event summary
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'events-summary';
+    summaryDiv.innerHTML = `<span>📊 Tổng số sự kiện: <strong>${events.length}</strong></span>`;
+    eventsList.insertBefore(summaryDiv, eventsList.firstChild);
+}
+
+function changeEventPage(page) {
+    currentEventPage = page;
+    renderEvents();
 }
 
 function loadEventOptions() {
@@ -147,7 +201,7 @@ function loadEventOptions() {
 
 async function loadReports() {
     const reportsList = document.getElementById('reportsList');
-    
+
     try {
         const reports = await fetchReports();
         const data = reports && typeof reports === 'object' ? reports : null;
@@ -156,7 +210,7 @@ async function loadReports() {
             reportsList.innerHTML = '<p>Không tải được dữ liệu báo cáo.</p>';
             return;
         }
-        
+
         reportsList.innerHTML = `
             <div class="report-item">
                 <strong>📊 Tổng sự kiện:</strong>
@@ -205,6 +259,49 @@ async function loadBookings() {
     updateStats();
 }
 
+function formatSeatId(seatId) {
+    if (!seatId) return '<span class="seat-badge"><span class="seat-number">N/A</span></span>';
+
+    const seatStr = String(seatId);
+
+    // Format: seat_A_1 or seat_A1
+    const match1 = seatStr.match(/seat[_-]?([A-Za-z]+)[_-]?(\d+)/i);
+    if (match1) {
+        return `<span class="seat-badge"><span class="seat-row">${match1[1].toUpperCase()}</span><span class="seat-number">Ghế ${match1[2]}</span></span>`;
+    }
+
+    // Format: A1, B12, etc.
+    const match2 = seatStr.match(/^([A-Za-z]+)(\d+)$/);
+    if (match2) {
+        return `<span class="seat-badge"><span class="seat-row">${match2[1].toUpperCase()}</span><span class="seat-number">Ghế ${match2[2]}</span></span>`;
+    }
+
+    // Format: just a number like "12" or "seat_12"
+    const match3 = seatStr.match(/seat[_-]?(\d+)/i);
+    if (match3) {
+        return `<span class="seat-badge"><span class="seat-number">Ghế ${match3[1]}</span></span>`;
+    }
+
+    // Plain number
+    if (/^\d+$/.test(seatStr)) {
+        return `<span class="seat-badge"><span class="seat-number">Ghế ${seatStr}</span></span>`;
+    }
+
+    return `<span class="seat-badge"><span class="seat-number">${seatId}</span></span>`;
+}
+
+function formatStatus(status) {
+    const statusMap = {
+        'CONFIRMED': { text: 'Đã xác nhận', class: 'status-confirmed' },
+        'PENDING': { text: 'Chờ xử lý', class: 'status-pending' },
+        'CANCELLED': { text: 'Đã hủy', class: 'status-cancelled' },
+        'PAID': { text: 'Đã thanh toán', class: 'status-confirmed' },
+        'RESERVED': { text: 'Đã giữ chỗ', class: 'status-pending' }
+    };
+    const info = statusMap[status] || { text: status || 'N/A', class: '' };
+    return `<span class="status-badge ${info.class}">${info.text}</span>`;
+}
+
 function renderBookings() {
     const bookingsList = document.getElementById('bookingsList');
     if (!bookingsList) {
@@ -216,26 +313,62 @@ function renderBookings() {
         return;
     }
 
-    const rows = bookings.map((ticket, index) => {
+    // Pagination logic
+    const totalPages = Math.ceil(bookings.length / bookingsPerPage);
+    currentBookingPage = Math.min(currentBookingPage, totalPages);
+    currentBookingPage = Math.max(currentBookingPage, 1);
+
+    const startIndex = (currentBookingPage - 1) * bookingsPerPage;
+    const endIndex = startIndex + bookingsPerPage;
+    const paginatedBookings = bookings.slice(startIndex, endIndex);
+
+    const rows = paginatedBookings.map((ticket, index) => {
         const eventInfo = events.find(item => item.id === ticket.eventId);
         const eventName = eventInfo ? eventInfo.name : ticket.eventId;
         const price = eventInfo && typeof eventInfo.price === 'number' ? eventInfo.price : 0;
         const createdAt = ticket.createdAt ? formatTimestamp(ticket.createdAt) : 'N/A';
-        const status = ticket.status || 'N/A';
+        const formattedSeat = formatSeatId(ticket.seatId);
+        const formattedStatus = formatStatus(ticket.status);
+        const actualIndex = startIndex + index + 1;
 
         return `
             <tr>
-                <td>${index + 1}</td>
+                <td>${actualIndex}</td>
                 <td>${eventName}</td>
-                <td>${ticket.seatId || 'N/A'}</td>
+                <td class="seat-cell">${formattedSeat}</td>
                 <td>${price.toLocaleString('vi-VN')} VNĐ</td>
-                <td>${status}</td>
+                <td>${formattedStatus}</td>
                 <td>${createdAt}</td>
             </tr>
         `;
     }).join('');
 
+    // Generate pagination buttons
+    let paginationHtml = '';
+    if (totalPages > 1) {
+        paginationHtml = `
+            <div class="pagination">
+                <button class="pagination-btn" onclick="changeBookingPage(1)" ${currentBookingPage === 1 ? 'disabled' : ''}>
+                    ⟪
+                </button>
+                <button class="pagination-btn" onclick="changeBookingPage(${currentBookingPage - 1})" ${currentBookingPage === 1 ? 'disabled' : ''}>
+                    ◀
+                </button>
+                <span class="pagination-info">Trang ${currentBookingPage} / ${totalPages}</span>
+                <button class="pagination-btn" onclick="changeBookingPage(${currentBookingPage + 1})" ${currentBookingPage === totalPages ? 'disabled' : ''}>
+                    ▶
+                </button>
+                <button class="pagination-btn" onclick="changeBookingPage(${totalPages})" ${currentBookingPage === totalPages ? 'disabled' : ''}>
+                    ⟫
+                </button>
+            </div>
+        `;
+    }
+
     bookingsList.innerHTML = `
+        <div class="booking-summary">
+            <span>📋 Tổng số vé: <strong>${bookings.length}</strong></span>
+        </div>
         <table class="table">
             <thead>
                 <tr>
@@ -251,7 +384,13 @@ function renderBookings() {
                 ${rows}
             </tbody>
         </table>
+        ${paginationHtml}
     `;
+}
+
+function changeBookingPage(page) {
+    currentBookingPage = page;
+    renderBookings();
 }
 
 // ============= Booking Function =============
@@ -262,6 +401,7 @@ async function bookTicket() {
     const userName = document.getElementById('userName').value;
     const userEmail = document.getElementById('userEmail').value;
     const userPhone = document.getElementById('userPhone').value;
+    const paymentMethod = document.getElementById('paymentMethod').value;
 
     const messageDiv = document.getElementById('bookingMessage');
     let reservedSeats = [];
@@ -281,7 +421,7 @@ async function bookTicket() {
     }
 
     const selectedEvent = events.find(e => e.id === eventId);
-    
+
     if (selectedEvent.availableSeats < seatCount) {
         messageDiv.className = 'message error';
         messageDiv.textContent = `⚠️ Chỉ còn ${selectedEvent.availableSeats} vé trống`;
@@ -307,12 +447,19 @@ async function bookTicket() {
 
         const ticketPrice = typeof selectedEvent.price === 'number' ? selectedEvent.price : 0;
         const totalPrice = ticketPrice * seatCount;
-        const paymentId = await processPayment({
+        const paymentResult = await processPayment({
             userId: currentUser.id,
             eventId: eventId,
             amount: totalPrice,
-            paymentMethod: 'CARD'
+            paymentMethod: paymentMethod
         });
+
+        const paymentId = paymentResult.paymentId || paymentResult;
+
+        // Show QR code modal for bank transfer
+        if (paymentMethod === 'BANK_TRANSFER' && paymentResult.qrCode) {
+            showQRModal(paymentResult);
+        }
 
         for (const seat of reservedSeats) {
             await createTicket({
@@ -411,4 +558,25 @@ function formatTimestamp(timestamp) {
         return 'N/A';
     }
     return date.toLocaleString('vi-VN');
+}
+
+// ============= QR Modal Functions =============
+
+function showQRModal(paymentData) {
+    const modal = document.getElementById('qrModal');
+    const qrImage = document.getElementById('qrCodeImage');
+    const bankInfo = paymentData.bankInfo || {};
+
+    qrImage.src = paymentData.qrCode;
+    document.getElementById('bankName').textContent = bankInfo.bankName || 'N/A';
+    document.getElementById('accountNumber').textContent = bankInfo.accountNumber || 'N/A';
+    document.getElementById('accountName').textContent = bankInfo.accountName || 'N/A';
+    document.getElementById('transferAmount').textContent = (parseFloat(bankInfo.amount) || 0).toLocaleString('vi-VN');
+    document.getElementById('transferContent').textContent = bankInfo.content || 'N/A';
+
+    modal.style.display = 'flex';
+}
+
+function closeQRModal() {
+    document.getElementById('qrModal').style.display = 'none';
 }

@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống bán vé sự kiện</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="navbar">
@@ -31,7 +35,8 @@
                 <div class="hero-left">
                     <span class="pill">Nền tảng bán vé thông minh</span>
                     <h2 class="hero-title">Tổ chức, bán vé và theo dõi doanh thu sự kiện trong một bảng điều khiển.</h2>
-                    <p class="hero-subtitle">Hệ thống tối ưu cho đội vận hành: quản lý chỗ ngồi, giá vé, khách hàng và báo cáo theo thời gian thực.</p>
+                    <p class="hero-subtitle">Hệ thống tối ưu cho đội vận hành: quản lý chỗ ngồi, giá vé, khách hàng và
+                        báo cáo theo thời gian thực.</p>
                     <div class="hero-actions">
                         <button class="btn btn-primary" onclick="showPage('events')">Khám phá sự kiện</button>
                         <button class="btn btn-secondary" onclick="showPage('bookings')">Đặt vé nhanh</button>
@@ -146,6 +151,14 @@
                         <label>Số điện thoại:</label>
                         <input type="tel" id="userPhone" required>
                     </div>
+
+                    <div class="form-group">
+                        <label>Phương thức thanh toán:</label>
+                        <select id="paymentMethod" required>
+                            <option value="CARD">Thẻ tín dụng/Ghi nợ</option>
+                            <option value="BANK_TRANSFER">Chuyển khoản ngân hàng (QR)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <button type="button" onclick="bookTicket()" class="btn btn-primary">Đặt vé</button>
@@ -185,6 +198,38 @@
         </div>
     </div>
 
+    <!-- QR Payment Modal -->
+    <div id="qrModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeQRModal()">&times;</span>
+            <h3>Thông tin chuyển khoản</h3>
+            <div id="bankInfoContainer" style="background:#f8f9fa; padding:20px; border-radius:8px; margin:20px 0;">
+                <h4 style="margin-top:0; color:#0f766e;">📋 Vui lòng chuyển khoản theo thông tin sau:</h4>
+                <p style="font-size:1.1rem;"><strong>Ngân hàng:</strong> <span id="bankName"
+                        style="color:#0f766e;"></span></p>
+                <p style="font-size:1.1rem;"><strong>Số tài khoản:</strong> <span id="accountNumber"
+                        style="color:#0f766e; font-weight:700; font-size:1.3rem;"></span></p>
+                <p style="font-size:1.1rem;"><strong>Tên tài khoản:</strong> <span id="accountName"
+                        style="color:#0f766e;"></span></p>
+                <p style="font-size:1.1rem;"><strong>Số tiền:</strong> <span id="transferAmount"
+                        style="color:#dc2626; font-weight:700; font-size:1.3rem;"></span> VNĐ</p>
+                <p
+                    style="font-size:1.05rem; background:#fef3c7; padding:10px; border-radius:6px; border-left:4px solid #f59e0b;">
+                    <strong>Nội dung CK:</strong> <span id="transferContent" style="font-family:monospace;"></span></p>
+            </div>
+            <div id="qrCodeContainer"
+                style="text-align:center; margin:20px 0; padding:15px; background:#fff; border-radius:8px;">
+                <p style="color:#666; font-size:0.9rem; margin-bottom:10px;">QR Code tham khảo (số tài khoản):</p>
+                <img id="qrCodeImage" src="" alt="QR Code"
+                    style="max-width:200px; border:2px solid #e5e7eb; padding:10px; border-radius:8px;">
+            </div>
+            <p style="text-align:center; color:#666; font-size:0.95rem;">⚠️ Vui lòng copy thông tin bên trên và chuyển
+                khoản thủ công qua app ngân hàng.<br>Vé sẽ được gửi qua email sau khi xác nhận thanh toán.</p>
+            <button class="btn btn-secondary" onclick="closeQRModal()" style="width:100%; margin-top:10px;">Đã hiểu,
+                đóng</button>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <p>&copy; 2025 Event Ticketing System. Tất cả quyền được bảo lưu.</p>
@@ -193,4 +238,5 @@
     <script src="api.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

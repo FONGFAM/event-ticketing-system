@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -17,16 +19,16 @@ public class PaymentController {
      }
 
      @PostMapping
-     public ResponseEntity<ApiResponse<String>> createPayment(
+     public ResponseEntity<ApiResponse<Map<String, Object>>> createPayment(
                @RequestParam("userId") String userId,
                @RequestParam("eventId") String eventId,
                @RequestParam("amount") double amount,
                @RequestParam("paymentMethod") String paymentMethod) {
 
-          String paymentId = paymentService.createPayment(userId, eventId, amount, paymentMethod);
+          Map<String, Object> paymentResult = paymentService.createPayment(userId, eventId, amount, paymentMethod);
           return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(ApiResponse.ok(paymentId, "Payment created successfully"));
+                    .body(ApiResponse.ok(paymentResult, "Payment created successfully"));
      }
 
      @PostMapping("/{paymentId}/confirm")
@@ -39,7 +41,8 @@ public class PaymentController {
      }
 
      @GetMapping("/{paymentId}")
-     public ResponseEntity<ApiResponse<PaymentTransaction>> getPaymentStatus(@PathVariable("paymentId") String paymentId) {
+     public ResponseEntity<ApiResponse<PaymentTransaction>> getPaymentStatus(
+               @PathVariable("paymentId") String paymentId) {
           PaymentTransaction payment = paymentService.getPaymentStatus(paymentId);
           return ResponseEntity.ok(ApiResponse.ok(payment));
      }

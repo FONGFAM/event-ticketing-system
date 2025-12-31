@@ -44,10 +44,11 @@ class PaymentServiceTest {
     void testCreatePayment_Success() {
         when(transactionRepository.save(any(PaymentTransaction.class))).thenReturn(testTransaction);
 
-        String paymentId = paymentService.createPayment("user-001", "event-456", 100.0, "CREDIT_CARD");
+        java.util.Map<String, Object> result = paymentService.createPayment("user-001", "event-456", 100.0,
+                "CREDIT_CARD");
 
-        assertNotNull(paymentId);
-        assertEquals("payment-123", paymentId);
+        assertNotNull(result);
+        assertEquals("payment-123", result.get("paymentId"));
         assertEquals("CONFIRMED", testTransaction.getStatus());
         assertNotNull(testTransaction.getTransactionId());
         verify(transactionRepository, times(2)).save(any(PaymentTransaction.class));
@@ -63,7 +64,7 @@ class PaymentServiceTest {
 
         verify(transactionRepository, times(1)).findById("payment-123");
         verify(transactionRepository, times(1)).save(any(PaymentTransaction.class));
-        verify(kafkaTemplate, times(1)).send("payment-confirmed", "payment-123", 
+        verify(kafkaTemplate, times(1)).send("payment-confirmed", "payment-123",
                 "{\"paymentId\": \"payment-123\", \"userId\": \"user-001\", \"eventId\": \"event-456\", \"amount\": 100.00}");
     }
 
