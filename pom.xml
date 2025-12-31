@@ -25,10 +25,10 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.4.0</spring-boot.version>
+        <spring-boot.version>3.4.13</spring-boot.version>
         <spring-cloud.version>2024.0.0</spring-cloud.version>
-        <grpc.version>1.59.0</grpc.version>
-        <protobuf.version>3.24.0</protobuf.version>
+        <grpc.version>1.62.2</grpc.version>
+        <protobuf.version>3.25.5</protobuf.version>
     </properties>
 
     <dependencyManagement>
@@ -65,6 +65,12 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf.version}</version>
+            </dependency>
+            <!-- PostgreSQL -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>42.6.1</version>
             </dependency>
 
             <!-- JUnit Jupiter Engine -->

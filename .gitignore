@@ -17,3 +17,5 @@ logs/
 .env
 .env.local
 docker-compose.override.yml
+
+.fake
